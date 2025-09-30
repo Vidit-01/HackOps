@@ -1,0 +1,36 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
+
+# Load dataset
+df = pd.read_csv("data_with_keywords.csv")
+
+# Drop rows where keywords or venue are missing
+df = df.dropna(subset=["KeyWords", "venue"])
+
+# Extract features and labels
+X_text = df["KeyWords"].astype(str)
+y = df["venue"].reset_index(drop=True)
+
+# Convert keywords to TF-IDF vectors
+vectorizer = TfidfVectorizer(stop_words="english")
+X_tfidf = vectorizer.fit_transform(X_text)
+
+# Fit Nearest Neighbors model (content-based similarity)
+nn_model = NearestNeighbors(n_neighbors=3, metric="cosine")  # return exactly 3 closest
+nn_model.fit(X_tfidf)
+
+# 🔹 Function to recommend top 3 journals
+def recommend_journals(user_keywords, top_k=3):
+    # Transform input keywords into vector
+    user_vec = vectorizer.transform([user_keywords])
+    
+    # Find nearest neighbors
+    distances, indices = nn_model.kneighbors(user_vec, n_neighbors=top_k)
+    
+    # Get top venues
+    recs = [y.iloc[i] for i in indices[0]]
+    return recs
+
+# Example usage
+user_input = "cancer treatment immunotherapy clinical trials healthcare"
+print("Top 3 Recommended Venues:", recommend_journals(user_input, top_k=3))
