@@ -19,7 +19,7 @@ def recommend():
         keywords = keyword.run(all_text)
         return jsonify({"keywords":keywords})
     # keywords = keyword.run(pdf_file
-    return jsonify({"journals":["IEEE","AMM","DJSCE"]})
+    return jsonify([{'id':1,'name':"IEEE"},{'id':1,'name':"AMM"},{'id':1,'name':"Stanford"},{'id':4,'name':"DJSCE"}])
 
 
 if __name__ == "__main__":
