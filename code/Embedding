@@ -1,0 +1,34 @@
+from sentence_transformers import SentenceTransformer
+from sklearn.neighbors import NearestNeighbors
+import pandas as pd
+
+# Load dataset
+df = pd.read_csv("data_with_keywords.csv")
+
+# Drop rows with missing values
+df = df.dropna(subset=["KeyWords", "venue"])
+
+# Extract text and labels
+X_text = df["KeyWords"].astype(str).reset_index(drop=True)
+y = df["venue"].reset_index(drop=True)
+
+# Load embedding model (MiniLM is lightweight & fast)
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Convert keywords to embeddings
+X_embeddings = model.encode(X_text, convert_to_tensor=False)
+
+# Fit Nearest Neighbors
+nn_model = NearestNeighbors(n_neighbors=3, metric="cosine")
+nn_model.fit(X_embeddings)
+
+# 🔹 Function to recommend top journals
+def recommend_journals(user_keywords, top_k=3):
+    user_vec = model.encode([user_keywords], convert_to_tensor=False)
+    distances, indices = nn_model.kneighbors(user_vec, n_neighbors=top_k)
+    recs = [(y.iloc[i], 1 - distances[0][j]) for j, i in enumerate(indices[0])]  # cosine similarity = 1 - distance
+    return recs
+
+# Example medical input
+user_input = "cancer treatment immunotherapy clinical trials healthcare"
+print("Top 3 Recommended Venues:", recommend_journals(user_input, top_k=3))
